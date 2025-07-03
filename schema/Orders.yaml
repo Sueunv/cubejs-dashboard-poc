@@ -1,0 +1,26 @@
+cubes:
+  - name: Orders
+    sql: SELECT * FROM cube_db.orders
+      # preAggregations:
+      # Pre-Aggregations definitions go here
+      # Learn more here: https://cube.dev/docs/caching/pre-aggregations/getting-started
+    joins: []
+    measures:
+      - name: count
+        type: count
+        drillMembers: [id, createdAt]
+      - name: amount
+        sql: amount
+        type: sum
+    dimensions:
+      - name: id
+        sql: id
+        type: number
+        primaryKey: true
+      - name: status
+        sql: status
+        type: string
+      - name: createdAt
+        sql: created_at
+        type: time
+    dataSource: default

@@ -1,0 +1,42 @@
+name: Deploy Cube.js Backend
+
+on: [push]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
+          docker login --username AWS --password-stdin 557690611431.dkr.ecr.ap-south-1.amazonaws.com
+
+      - name: Build and Push Docker image
+        run: |
+          IMAGE_URI=557690611431.dkr.ecr.ap-south-1.amazonaws.com/${{ secrets.ECR_REPO }}
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
+
+      - name: SSH into EC2 and restart service
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/cubejs-poc
+            docker-compose pull
+            docker-compose up -d
+            docker image prune -f
+
